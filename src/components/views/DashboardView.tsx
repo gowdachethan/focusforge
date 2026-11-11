@@ -3,13 +3,17 @@ import {
   AlertCircle,
   ArrowRight,
   Award,
+  BarChart3,
   BookOpen,
   CalendarClock,
   CheckCircle2,
   ClipboardCheck,
   Clock,
   Compass,
+  Cpu,
+  FileText,
   Flame,
+  GraduationCap,
   Pause,
   Play,
   RefreshCw,
@@ -20,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useFocusForge } from '../../hooks/useFocusForgeStore';
 import { useStudyTimer } from '../../hooks/useStudyTimer';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import {
   diffISTDateDays,
   formatDurationMMSS,
@@ -59,6 +64,7 @@ export const DashboardView: React.FC = () => {
   } = useFocusForge();
 
   const { timer, remainingSeconds, progressPercent, pauseTimer, resumeTimer } = useStudyTimer();
+  const isMobile = useIsMobile();
 
   const todayIST = getISTDateString(now);
   const istDay = getISTDayOfWeek(now);
@@ -180,6 +186,420 @@ export const DashboardView: React.FC = () => {
     });
     pushToast('Daily Reflection Saved', 'Your evening log is stored safely in IndexedDB.', 'success');
   };
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {/* Compact Mobile Status Chips */}
+        <div className="flex items-center justify-between gap-2 px-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-[11px] font-bold text-emerald-600 dark:text-emerald-300">
+            <Flame className="w-3.5 h-3.5 text-amber-500" />
+            <span>{analytics.streakDays}d Streak</span>
+          </div>
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+            {istDay} · {daysToExam}d to GATE 2027
+          </span>
+        </div>
+
+        {/* Active Timer Banner on Mobile if Running */}
+        {timer && (
+          <div className="rounded-2xl border border-blue-500/40 bg-gradient-to-r from-blue-600/15 to-emerald-600/15 p-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500">
+                Active {timer.phase}
+              </span>
+              <p className="text-xl font-extrabold font-mono tabular-nums text-slate-900 dark:text-white">
+                {formatDurationMMSS(remainingSeconds)}
+              </p>
+              <p className="text-xs text-slate-600 dark:text-slate-300 truncate">
+                {timer.topicName}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {timer.status === 'running' ? (
+                <button
+                  type="button"
+                  onClick={pauseTimer}
+                  className="p-3 rounded-xl bg-amber-500 text-slate-950 font-bold"
+                  aria-label="Pause"
+                >
+                  <Pause className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={resumeTimer}
+                  className="p-3 rounded-xl bg-blue-600 text-white font-bold"
+                  aria-label="Resume"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setActiveNav('start-study')}
+                className="px-3 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold"
+              >
+                Focus
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Hero: Next Action + Start Study */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 p-4 space-y-3 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+              Next Recommended Focus
+            </span>
+            <button
+              type="button"
+              onClick={() => setOverrideOpen((v) => !v)}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 dark:bg-navy-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300"
+            >
+              <SlidersHorizontal className="w-3 h-3" />
+              {overrideOpen ? 'Auto Pick' : 'Change'}
+            </button>
+          </div>
+
+          {!overrideOpen ? (
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-snug">
+                {recommendations.nextStudy.subjectName}
+              </h3>
+              <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                {recommendations.nextStudy.topicName}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                {recommendations.nextStudy.reason}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOverrideCat('GATE');
+                    const s = gateSubjects[0];
+                    setOverrideSubjectId(s.id);
+                    const t = gateTopics.find((gt) => gt.subjectId === s.id);
+                    if (t) setOverrideTopicId(t.id);
+                  }}
+                  className={`py-2 rounded-xl text-xs font-bold ${
+                    overrideCat === 'GATE'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  GATE
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOverrideCat('Robotics & AI');
+                    const sk = roboticsSkills[0];
+                    setOverrideSubjectId(sk.id);
+                    if (sk.roadmap[0]) setOverrideTopicId(sk.roadmap[0].id);
+                  }}
+                  className={`py-2 rounded-xl text-xs font-bold ${
+                    overrideCat === 'Robotics & AI'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Robotics & AI
+                </button>
+              </div>
+              <select
+                value={overrideSubjectId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setOverrideSubjectId(val);
+                  if (overrideCat === 'GATE') {
+                    const t = gateTopics.find((gt) => gt.subjectId === val);
+                    if (t) setOverrideTopicId(t.id);
+                  } else {
+                    const sk = roboticsSkills.find((s) => s.id === val);
+                    if (sk?.roadmap[0]) setOverrideTopicId(sk.roadmap[0].id);
+                  }
+                }}
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-navy-850 px-3 py-2 text-xs"
+              >
+                {overrideCat === 'GATE'
+                  ? gateSubjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))
+                  : roboticsSkills.map((sk) => (
+                      <option key={sk.id} value={sk.id}>
+                        {sk.name}
+                      </option>
+                    ))}
+              </select>
+              <select
+                value={overrideTopicId}
+                onChange={(e) => setOverrideTopicId(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-navy-850 px-3 py-2 text-xs"
+              >
+                {overrideCat === 'GATE'
+                  ? gateTopics
+                      .filter((t) => t.subjectId === overrideSubjectId)
+                      .map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.title}
+                        </option>
+                      ))
+                  : (
+                      roboticsSkills.find((s) => s.id === overrideSubjectId)?.roadmap ?? []
+                    ).map((rm) => (
+                      <option key={rm.id} value={rm.id}>
+                        [{rm.level}] {rm.title}
+                      </option>
+                    ))}
+              </select>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() =>
+              launchStartStudyWith({
+                category: activeFocusTarget.category,
+                subjectId: activeFocusTarget.subjectId,
+                topicId: activeFocusTarget.topicId,
+                objective: `Complete focused work on ${activeFocusTarget.topicName}`,
+              })
+            }
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-sm font-bold shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 active:scale-[0.99] transition"
+          >
+            <Play className="w-4 h-4 fill-current" />
+            Start Focus Session
+          </button>
+        </div>
+
+        {/* Mobile Now & Next Schedule Strip */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 p-4 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+              <CalendarClock className="w-3.5 h-3.5" />
+              Today&apos;s Schedule
+            </span>
+            <button
+              type="button"
+              onClick={() => setActiveNav('timetable')}
+              className="text-xs font-semibold text-blue-500"
+            >
+              Edit
+            </button>
+          </div>
+          {currentSlot ? (
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                  {currentSlot.title}
+                </p>
+                <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                  Now: {formatHHMM12Hour(currentSlot.startTime)} – {formatHHMM12Hour(currentSlot.endTime)}
+                </p>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-500 shrink-0">
+                Active
+              </span>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500">Outside scheduled slots — open focus ready.</p>
+          )}
+          {nextSlot && (
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between gap-2">
+              <span>Next:</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                {formatHHMM12Hour(nextSlot.startTime)} · {nextSlot.title}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Compact Progress Rings */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 p-4">
+          <div className="grid grid-cols-2 gap-3 text-center">
+            <div className="flex flex-col items-center p-2 rounded-xl bg-slate-50 dark:bg-navy-850">
+              <CircularProgress
+                percent={analytics.dailyGoalPercent}
+                size={76}
+                strokeWidth={7}
+                progressColor="stroke-blue-500"
+                label={`${analytics.dailyGoalPercent}%`}
+              />
+              <p className="text-xs font-bold mt-2">Daily Goal</p>
+              <p className="text-[11px] text-slate-500 tabular-nums">
+                {formatMinutesHuman(analytics.todayStudyMinutes)} / {formatMinutesHuman(settings.dailyStudyTargetMinutes)}
+              </p>
+            </div>
+            <div className="flex flex-col items-center p-2 rounded-xl bg-slate-50 dark:bg-navy-850">
+              <CircularProgress
+                percent={analytics.weeklyGoalPercent}
+                size={76}
+                strokeWidth={7}
+                progressColor="stroke-emerald-500"
+                label={`${analytics.weeklyGoalPercent}%`}
+              />
+              <p className="text-xs font-bold mt-2">Weekly Goal</p>
+              <p className="text-[11px] text-slate-500 tabular-nums">
+                {(analytics.weeklyStudyMinutes / 60).toFixed(1)}h / {settings.weeklyStudyTargetHours}h
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile App Shortcut Tiles (2x3 Grid) */}
+        <div className="grid grid-cols-2 gap-2.5">
+          {[
+            {
+              nav: 'gate-subjects' as const,
+              title: 'GATE 2027',
+              sub: `${analytics.completedTopicsCount}/${analytics.totalTopicsCount} topics`,
+              icon: GraduationCap,
+              color: 'text-blue-500',
+            },
+            {
+              nav: 'robotics-skills' as const,
+              title: 'Robotics & AI',
+              sub: `${analytics.skillsCompletionPercent}% mastery`,
+              icon: Cpu,
+              color: 'text-emerald-500',
+            },
+            {
+              nav: 'revision' as const,
+              title: 'Revisions',
+              sub: `${dueRevisions.length} due today`,
+              icon: RefreshCw,
+              color: 'text-amber-500',
+            },
+            {
+              nav: 'mock-exams' as const,
+              title: 'Mock Exam',
+              sub: 'GATE CBT mode',
+              icon: BookOpen,
+              color: 'text-purple-500',
+            },
+            {
+              nav: 'notes' as const,
+              title: 'Notes',
+              sub: 'Formulas & links',
+              icon: FileText,
+              color: 'text-sky-500',
+            },
+            {
+              nav: 'analytics' as const,
+              title: 'Analytics',
+              sub: `${analytics.totalTestAttempts} tests`,
+              icon: BarChart3,
+              color: 'text-teal-500',
+            },
+          ].map((tile) => {
+            const Icon = tile.icon;
+            return (
+              <button
+                key={tile.nav}
+                type="button"
+                onClick={() => setActiveNav(tile.nav)}
+                className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 text-left flex items-center gap-3 active:scale-[0.98] transition"
+              >
+                <div className="p-2 rounded-xl bg-slate-100 dark:bg-navy-850 shrink-0">
+                  <Icon className={`w-5 h-5 ${tile.color}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {tile.title}
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    {tile.sub}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Gentle Catch-Up if applicable */}
+        {missedStudySlotsToday.length > 0 && (
+          <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-3.5 space-y-2">
+            <p className="text-xs font-bold text-slate-900 dark:text-white">
+              Gentle Catch-Up · {missedStudySlotsToday[0].title}
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const slot = missedStudySlotsToday[0];
+                  saveMissedRecovery({
+                    id: `mr-${todayIST}-${slot.id}`,
+                    slotId: slot.id,
+                    slotTitle: slot.title,
+                    dateIST: todayIST,
+                    action: 'rescheduled',
+                  });
+                  launchStartStudyWith({
+                    category: slot.category === 'Robotics & AI' ? 'Robotics & AI' : 'GATE',
+                    subjectId: slot.subjectId ?? 'gate-robotics',
+                    topicId: slot.topicId ?? 'robo-classification-kinematics',
+                    objective: `Calm catch-up: ${slot.title}`,
+                  });
+                }}
+                className="flex-1 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold"
+              >
+                20m Catch-Up
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const slot = missedStudySlotsToday[0];
+                  saveMissedRecovery({
+                    id: `mr-${todayIST}-${slot.id}`,
+                    slotId: slot.id,
+                    slotTitle: slot.title,
+                    dateIST: todayIST,
+                    action: 'dismissed',
+                  });
+                }}
+                className="px-3 py-2 rounded-xl bg-slate-200 dark:bg-navy-800 text-xs font-medium"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Motivation & Daily Reflection */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 p-4 space-y-3">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-500">
+            <Sparkles className="w-3.5 h-3.5" />
+            Daily Consistency Mindframe
+          </div>
+          <p className="text-xs font-medium text-slate-700 dark:text-slate-200 leading-relaxed">
+            “{dailyMessage}”
+          </p>
+          <form onSubmit={handleSaveReflection} className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+            <input
+              type="text"
+              value={winsInput}
+              onChange={(e) => setWinsInput(e.target.value)}
+              placeholder="Today's study win or quick reflection..."
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-navy-850 px-3 py-2 text-xs"
+            />
+            <button
+              type="submit"
+              className="w-full py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold"
+            >
+              {existingReflection ? 'Update Today\'s Reflection' : 'Save Reflection'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -11,6 +11,7 @@ import {
   Video,
 } from 'lucide-react';
 import { useFocusForge } from '../../hooks/useFocusForgeStore';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { NoteAttachment, StudyCategory, StudyNote } from '../../types';
 import { downloadTextFile, generateId } from '../../utils/id';
 import { getISTDateString } from '../../utils/date';
@@ -29,6 +30,8 @@ export const NotesResourcesView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSubject, setFilterSubject] = useState('all');
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<'library' | 'editor'>('library');
+  const isMobile = useIsMobile();
 
   // Editor state
   const [category, setCategory] = useState<StudyCategory>('GATE');
@@ -152,6 +155,7 @@ export const NotesResourcesView: React.FC = () => {
     await saveNote(note);
     pushToast('Note Saved', `"${note.title}" saved in IndexedDB.`, 'success');
     resetForm();
+    if (isMobile) setMobileTab('library');
   };
 
   const filteredNotes = useMemo(() => {
@@ -185,8 +189,37 @@ export const NotesResourcesView: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div className="space-y-4">
+      {isMobile && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setMobileTab('library')}
+            className={`py-2.5 rounded-xl text-xs font-bold border ${
+              mobileTab === 'library'
+                ? 'bg-blue-600 border-blue-500 text-white'
+                : 'bg-white dark:bg-navy-900 border-slate-200 dark:border-slate-800'
+            }`}
+          >
+            My Notes ({notes.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('editor')}
+            className={`py-2.5 rounded-xl text-xs font-bold border ${
+              mobileTab === 'editor'
+                ? 'bg-emerald-600 border-emerald-500 text-white'
+                : 'bg-white dark:bg-navy-900 border-slate-200 dark:border-slate-800'
+            }`}
+          >
+            {editingNoteId ? 'Edit Note' : '+ New Note'}
+          </button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
       {/* Note Editor */}
+      {(!isMobile || mobileTab === 'editor') && (
       <form
         onSubmit={handleSaveNote}
         className="lg:col-span-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 p-5 space-y-3.5"
@@ -446,8 +479,10 @@ export const NotesResourcesView: React.FC = () => {
           {editingNoteId ? 'Update Note' : 'Save Note & Attachments'}
         </button>
       </form>
+      )}
 
       {/* Notes Library & Search */}
+      {(!isMobile || mobileTab === 'library') && (
       <div className="lg:col-span-7 space-y-4">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 p-4 flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px]">
@@ -517,7 +552,10 @@ export const NotesResourcesView: React.FC = () => {
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => loadNoteIntoEditor(n)}
+                      onClick={() => {
+                        loadNoteIntoEditor(n);
+                        if (isMobile) setMobileTab('editor');
+                      }}
                       className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-navy-800 text-xs font-semibold"
                     >
                       Edit
@@ -596,6 +634,8 @@ export const NotesResourcesView: React.FC = () => {
           </div>
         )}
       </div>
+      )}
+    </div>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FocusForgeProvider, useFocusForge } from './hooks/useFocusForgeStore';
 import { StudyTimerProvider } from './hooks/useStudyTimer';
+import { useIsMobile } from './hooks/useIsMobile';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
@@ -21,6 +22,7 @@ import { SettingsBackupView } from './components/views/SettingsBackupView';
 const FocusForgeShell: React.FC = () => {
   const { isReady, activeNav, focusMode } = useFocusForge();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   if (!isReady) {
     return (
@@ -75,7 +77,11 @@ const FocusForgeShell: React.FC = () => {
 
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar onOpenMobileMenu={() => setMobileMenuOpen(true)} />
-        <main className="flex-1 p-4 sm:p-6 pb-24 lg:pb-6 max-w-[1600px] w-full mx-auto">
+        <main
+          className={`flex-1 max-w-[1600px] w-full mx-auto ${
+            isMobile ? 'p-3.5 pb-24' : 'p-4 sm:p-6 pb-24 lg:pb-6'
+          }`}
+        >
           {renderView()}
         </main>
       </div>

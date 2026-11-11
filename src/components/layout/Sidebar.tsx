@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { NavSectionId } from '../../types';
 import { useFocusForge } from '../../hooks/useFocusForgeStore';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 export const NAV_ITEMS: { id: NavSectionId; label: string; icon: React.FC<{ className?: string }>; badge?: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -43,6 +44,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) => {
   const { activeNav, setActiveNav, settings, updateSettings, setFocusMode, analytics } =
     useFocusForge();
+  const isMobile = useIsMobile();
 
   const dueCount = analytics.overdueRevisionsCount + analytics.todayRevisionsCount;
 
@@ -157,9 +159,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
 
   return (
     <>
-      <aside className="hidden lg:block shrink-0 h-screen sticky top-0">{content}</aside>
+      {!isMobile && (
+        <aside className="hidden lg:block shrink-0 h-screen sticky top-0">{content}</aside>
+      )}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
+        <div className="fixed inset-0 z-50 flex">
           <div
             className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm"
             onClick={onCloseMobile}

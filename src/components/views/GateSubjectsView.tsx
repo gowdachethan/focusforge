@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useFocusForge } from '../../hooks/useFocusForgeStore';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { OFFICIAL_GATE_2027_PATTERN } from '../../data/gateSyllabus';
 import { GateTopic, TopicLearningStatus } from '../../types';
 import { CircularProgress } from '../common/CircularProgress';
@@ -45,6 +46,7 @@ export const GateSubjectsView: React.FC = () => {
   const [showOfficialModal, setShowOfficialModal] = useState<boolean>(false);
   const [newLinkLabel, setNewLinkLabel] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
+  const isMobile = useIsMobile();
 
   const visibleSubjects = useMemo(() => {
     return gateSubjects.filter(
@@ -140,55 +142,89 @@ export const GateSubjectsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Subject Cards Switcher */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
-        {visibleSubjects.map((subj) => {
-          const st = getSubjectStats(subj.id);
-          const isSelected = subj.id === activeSubject?.id;
-          return (
-            <button
-              key={subj.id}
-              type="button"
-              onClick={() => {
-                setSelectedSubjectId(subj.id);
-                const firstTopic = gateTopics.find((t) => t.subjectId === subj.id);
-                setExpandedTopicId(firstTopic?.id ?? null);
-              }}
-              className={`text-left rounded-2xl border p-4 transition flex items-center justify-between gap-3 ${
-                isSelected
-                  ? 'border-blue-500 bg-blue-500/10 shadow-sm'
-                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 hover:border-slate-300 dark:hover:border-slate-700'
-              }`}
-            >
-              <div className="min-w-0">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                  {subj.officialSection}
-                </span>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate mt-0.5">
-                  {subj.name}
-                </h4>
-                <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>{st.done}/{st.total} topics</span>
-                  <span>·</span>
-                  <span>{formatMinutesHuman(st.studyMinutes)}</span>
-                  {st.weakCount > 0 && (
-                    <span className="text-amber-500 font-semibold">
-                      · {st.weakCount} weak
-                    </span>
-                  )}
+      {/* Subject Cards Switcher (Mobile horizontal pill strip vs Desktop grid) */}
+      {isMobile ? (
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {visibleSubjects.map((subj) => {
+            const st = getSubjectStats(subj.id);
+            const isSelected = subj.id === activeSubject?.id;
+            return (
+              <button
+                key={subj.id}
+                type="button"
+                onClick={() => {
+                  setSelectedSubjectId(subj.id);
+                  const firstTopic = gateTopics.find((t) => t.subjectId === subj.id);
+                  setExpandedTopicId(firstTopic?.id ?? null);
+                }}
+                className={`shrink-0 px-3.5 py-2.5 rounded-xl border text-left transition ${
+                  isSelected
+                    ? 'border-blue-500 bg-blue-600 text-white shadow-sm'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 text-slate-700 dark:text-slate-200'
+                }`}
+              >
+                <div className="text-xs font-bold whitespace-nowrap">{subj.shortName}</div>
+                <div
+                  className={`text-[10px] mt-0.5 tabular-nums ${
+                    isSelected ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'
+                  }`}
+                >
+                  {st.done}/{st.total} · {st.pct}%
                 </div>
-              </div>
-              <CircularProgress
-                percent={st.pct}
-                size={54}
-                strokeWidth={5}
-                progressColor={isSelected ? 'stroke-blue-500' : 'stroke-emerald-500'}
-                label={`${st.pct}%`}
-              />
-            </button>
-          );
-        })}
-      </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+          {visibleSubjects.map((subj) => {
+            const st = getSubjectStats(subj.id);
+            const isSelected = subj.id === activeSubject?.id;
+            return (
+              <button
+                key={subj.id}
+                type="button"
+                onClick={() => {
+                  setSelectedSubjectId(subj.id);
+                  const firstTopic = gateTopics.find((t) => t.subjectId === subj.id);
+                  setExpandedTopicId(firstTopic?.id ?? null);
+                }}
+                className={`text-left rounded-2xl border p-4 transition flex items-center justify-between gap-3 ${
+                  isSelected
+                    ? 'border-blue-500 bg-blue-500/10 shadow-sm'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                    {subj.officialSection}
+                  </span>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate mt-0.5">
+                    {subj.name}
+                  </h4>
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    <span>{st.done}/{st.total} topics</span>
+                    <span>·</span>
+                    <span>{formatMinutesHuman(st.studyMinutes)}</span>
+                    {st.weakCount > 0 && (
+                      <span className="text-amber-500 font-semibold">
+                        · {st.weakCount} weak
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <CircularProgress
+                  percent={st.pct}
+                  size={54}
+                  strokeWidth={5}
+                  progressColor={isSelected ? 'stroke-blue-500' : 'stroke-emerald-500'}
+                  label={`${st.pct}%`}
+                />
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Selected Subject Dashboard */}
       {activeSubject && activeStats && (

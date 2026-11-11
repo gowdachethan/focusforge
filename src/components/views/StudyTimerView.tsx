@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useFocusForge } from '../../hooks/useFocusForgeStore';
 import { useStudyTimer } from '../../hooks/useStudyTimer';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { TimerMode } from '../../types';
 import { CircularProgress } from '../common/CircularProgress';
 import { formatDurationMMSS, formatMinutesHuman, getISTTimeParts } from '../../utils/date';
@@ -42,6 +43,7 @@ export const StudyTimerView: React.FC = () => {
     endAndRecordSession,
     toggleAutoTransition,
   } = useStudyTimer();
+  const isMobile = useIsMobile();
 
   const [mode, setMode] = useState<TimerMode>('pomodoro');
   const [customStudy, setCustomStudy] = useState<number>(settings.pomodoroStudyMin);
@@ -393,6 +395,32 @@ export const StudyTimerView: React.FC = () => {
           <p className="text-xs text-slate-500 dark:text-slate-400">
             No study sessions recorded yet. Start a timer above or via Start Study to begin tracking real hours.
           </p>
+        ) : isMobile ? (
+          <div className="space-y-2">
+            {studySessions.slice(0, 12).map((s) => (
+              <div
+                key={s.id}
+                className="p-3 rounded-xl bg-slate-50 dark:bg-navy-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {s.subjectName} · {s.topicName}
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {s.dateIST} · {s.category} · <span className="capitalize">{s.timerMode}</span>
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-xs font-mono font-bold text-blue-500">
+                    {s.actualSeconds < 60 ? `${s.actualSeconds}s` : formatMinutesHuman(s.actualMinutes)}
+                  </p>
+                  <p className="text-[10px] text-emerald-500 font-semibold">
+                    {s.completedFull ? 'Completed' : 'Logged'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">

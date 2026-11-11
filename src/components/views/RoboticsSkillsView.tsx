@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ArrowLeft,
   CheckSquare,
   Cpu,
   ExternalLink,
@@ -10,6 +11,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { useFocusForge } from '../../hooks/useFocusForgeStore';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { RoboticsSkill, SkillLevel } from '../../types';
 import { CircularProgress } from '../common/CircularProgress';
 import { formatMinutesHuman } from '../../utils/date';
@@ -33,6 +35,8 @@ export const RoboticsSkillsView: React.FC = () => {
   const [newAssignmentTitle, setNewAssignmentTitle] = useState('');
   const [newRefLabel, setNewRefLabel] = useState('');
   const [newRefUrl, setNewRefUrl] = useState('');
+  const [mobileShowDetail, setMobileShowDetail] = useState(false);
+  const isMobile = useIsMobile();
 
   const activeSkill =
     roboticsSkills.find((s) => s.id === selectedSkillId) ?? roboticsSkills[0];
@@ -162,48 +166,63 @@ export const RoboticsSkillsView: React.FC = () => {
         </div>
       </div>
 
-      {/* 15 Skills Selector + Detail Split */}
+      {/* 15 Skills Selector + Detail Split (Mobile Master-Detail vs Desktop 4/8) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Skills Directory */}
-        <div className="lg:col-span-4 space-y-2">
-          {roboticsSkills.map((sk) => {
-            const pct = getSkillCompletion(sk);
-            const active = sk.id === activeSkill?.id;
-            return (
-              <button
-                key={sk.id}
-                type="button"
-                onClick={() => setSelectedSkillId(sk.id)}
-                className={`w-full text-left rounded-xl border p-3.5 transition flex items-center justify-between gap-3 ${
-                  active
-                    ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 hover:border-slate-300 dark:hover:border-slate-700'
-                }`}
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                      {sk.name}
-                    </span>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-navy-800 text-slate-500 dark:text-slate-400">
-                      {sk.category}
-                    </span>
+        {(!isMobile || !mobileShowDetail) && (
+          <div className="lg:col-span-4 space-y-2">
+            {roboticsSkills.map((sk) => {
+              const pct = getSkillCompletion(sk);
+              const active = sk.id === activeSkill?.id;
+              return (
+                <button
+                  key={sk.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedSkillId(sk.id);
+                    if (isMobile) setMobileShowDetail(true);
+                  }}
+                  className={`w-full text-left rounded-xl border p-3.5 transition flex items-center justify-between gap-3 ${
+                    active
+                      ? 'border-emerald-500 bg-emerald-500/10'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                        {sk.name}
+                      </span>
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-navy-800 text-slate-500 dark:text-slate-400">
+                        {sk.category}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      {formatMinutesHuman(sk.studyMinutes)} logged · {sk.milestones.filter((m) => m.completed).length}/{sk.milestones.length} milestones
+                    </p>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    {formatMinutesHuman(sk.studyMinutes)} logged · {sk.milestones.filter((m) => m.completed).length}/{sk.milestones.length} milestones
-                  </p>
-                </div>
-                <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                  {pct}%
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    {pct}%
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Right Selected Skill Workspace */}
-        {activeSkill && (
+        {activeSkill && (!isMobile || mobileShowDetail) && (
           <div className="lg:col-span-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 p-5 sm:p-6 space-y-6">
+            {isMobile && (
+              <button
+                type="button"
+                onClick={() => setMobileShowDetail(false)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-navy-800 text-xs font-bold text-slate-700 dark:text-slate-200"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                All 15 Robotics & AI Skills
+              </button>
+            )}
             <div className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
